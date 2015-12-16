@@ -6,20 +6,40 @@ import (
 )
 
 var (
-	hle = New()
 	mu  = sync.Mutex{}
+	hle = New()
 )
 
+func useThing(t int) {}
+
 func BenchmarkHle(b *testing.B) {
+	var wg sync.WaitGroup
 	for i := 0; i < b.N; i++ {
-		hle.Lock()
-		hle.Unlock()
+		wg.Add(1)
+		go func() {
+			hle.Lock()
+			thing := i
+			hle.Unlock()
+
+			useThing(thing)
+			wg.Done()
+		}()
 	}
+	wg.Wait()
 }
 
 func BenchmarkMutex(b *testing.B) {
+	var wg sync.WaitGroup
 	for i := 0; i < b.N; i++ {
-		mu.Lock()
-		mu.Unlock()
+		wg.Add(1)
+		go func() {
+			mu.Lock()
+			thing := i
+			mu.Unlock()
+
+			useThing(thing)
+			wg.Done()
+		}()
 	}
+	wg.Wait()
 }
